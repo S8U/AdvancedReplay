@@ -5,6 +5,8 @@ package me.jumper251.replay.listener;
 import java.util.Arrays;
 
 
+import me.jumper251.replay.replaysystem.Replay;
+import me.jumper251.replay.utils.ReplayManager;
 import org.bukkit.Chunk;
 
 import org.bukkit.entity.Player;
@@ -44,23 +46,35 @@ public class ReplayListener extends AbstractListener {
 	@SuppressWarnings("deprecation")
 	@EventHandler (priority = EventPriority.MONITOR)
 	public void onInteract(PlayerInteractEvent e) {
-		if (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) {
-			Player p = e.getPlayer();
-			if (ReplayHelper.replaySessions.containsKey(p.getName())) {
-				e.setCancelled(true);
-				
-				Replayer replayer = ReplayHelper.replaySessions.get(p.getName());
-				if (p.getItemInHand() == null) return;
-				if (p.getItemInHand().getItemMeta() == null) return;
-				
-				ItemMeta meta = p.getItemInHand().getItemMeta();
-				ItemConfigType itemType = ItemConfig.getByIdAndName(p.getItemInHand().getType(), meta.getDisplayName().replaceAll("§", "&"));
-				
+		Player p = e.getPlayer();
+
+		if (e.getAction() != Action.PHYSICAL && ReplayHelper.replaySessions.containsKey(p.getName())) {
+			e.setCancelled(true);
+
+			Replayer replayer = ReplayHelper.replaySessions.get(p.getName());
+			if (p.getItemInHand() == null) return;
+			if (p.getItemInHand().getItemMeta() == null) return;
+
+			ItemMeta meta = p.getItemInHand().getItemMeta();
+			ItemConfigType itemType = ItemConfig.getByIdAndName(p.getItemInHand().getType(), meta.getDisplayName().replaceAll("§", "&"));
+
+			if (e.getAction() == Action.LEFT_CLICK_AIR || e.getAction() == Action.LEFT_CLICK_BLOCK) {
+				if (itemType == ItemConfigType.SPEED) {
+					if (replayer.getSpeed() == 2) {
+						replayer.setSpeed(1);
+					} else if (replayer.getSpeed() ==  1) {
+						replayer.setSpeed(0.5D);
+					} else if (replayer.getSpeed() == 0.5D) {
+						replayer.setSpeed(0.25D);
+					}
+				}
+			}
+			if (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) {
 				if (itemType == ItemConfigType.PAUSE) {
 					replayer.setPaused(!replayer.isPaused());
 					ReplayHelper.sendTitle(p, " ", "§c❙❙", 20);
 				}
-					
+
 				if (itemType == ItemConfigType.FORWARD) {
 					replayer.getUtils().forward();
 					ReplayHelper.sendTitle(p, " ", "§a»»", 20);
@@ -71,45 +85,34 @@ public class ReplayListener extends AbstractListener {
 					ReplayHelper.sendTitle(p, " ", "§c««", 20);
 
 				}
-				
-				
+
+
 				if (itemType == ItemConfigType.RESUME) {
 					replayer.setPaused(!replayer.isPaused());
 					ReplayHelper.sendTitle(p, " ", "§a➤", 20);
 
 				}
-				
+
 				if (itemType == ItemConfigType.SPEED) {
-					if (p.isSneaking()) {
-						if (replayer.getSpeed() < 1) {
-							replayer.setSpeed(1);
-						} else if (replayer.getSpeed() == 1) {
-							replayer.setSpeed(2);
-						}
-						
-					} else {
-						if (replayer.getSpeed() == 2) {
-							replayer.setSpeed(1);
-						} else if (replayer.getSpeed() ==  1) {
-							replayer.setSpeed(0.5D);
-						} else if (replayer.getSpeed() == 0.5D) {
-							 replayer.setSpeed(0.25D);
-						}
+					if (replayer.getSpeed() == 0.25D) {
+						replayer.setSpeed(0.5D);
+					} else if (replayer.getSpeed() == 0.5D) {
+						replayer.setSpeed(1);
+					} else if (replayer.getSpeed() == 1) {
+						replayer.setSpeed(2);
 					}
-					
-					
 				}
-				
+
 				if (itemType == ItemConfigType.LEAVE) {
 					replayer.stop();
 				}
-				
+
 				if (itemType == ItemConfigType.TELEPORT) {
 					ReplayHelper.createTeleporter(p, replayer);
 				}
-				
+
 				ItemConfigOption pauseResume = ItemConfig.getItem(ItemConfigType.RESUME);
-				
+
 				if (itemType == ItemConfigType.PAUSE || itemType == ItemConfigType.RESUME) {
 					if (replayer.isPaused()) {
 						p.getInventory().setItem(pauseResume.getSlot(), ReplayHelper.getResumeItem());
@@ -117,9 +120,6 @@ public class ReplayListener extends AbstractListener {
 						p.getInventory().setItem(pauseResume.getSlot(), ReplayHelper.getPauseItem());
 					}
 				}
-				
-				
-				
 			}
 		}
 	}
@@ -300,7 +300,7 @@ public class ReplayListener extends AbstractListener {
 	@EventHandler
 	public void onJoin(PlayerJoinEvent e) {
 		Player p = e.getPlayer();
-		
+
 		if(ConfigManager.UPDATE_NOTIFY){
 			if(ReplaySystem.updater.isVersionAvailable() && p.hasPermission("replay.admin")){
 				p.sendMessage(ReplaySystem.PREFIX + "An update is available: https://www.spigotmc.org/resources/advancedreplay-1-8-1-15.52849/");
