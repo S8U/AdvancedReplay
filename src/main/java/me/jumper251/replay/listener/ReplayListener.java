@@ -302,12 +302,9 @@ public class ReplayListener extends AbstractListener {
 		Player p = e.getPlayer();
 
 		if (ConfigManager.HIDE_PLAYERS) {
-			System.out.println("activeReplays: " + ReplayManager.activeReplays);
-			System.out.println("replaySessions: " + ReplayHelper.replaySessions);
 			for (Replayer replayer : ReplayHelper.replaySessions.values()) {
 				if (p.equals(replayer.getWatchingPlayer())) continue;
 
-				System.out.println(p.getName() + " / " + replayer.getWatchingPlayer().getName());
 				p.hidePlayer(replayer.getWatchingPlayer());
 				replayer.getWatchingPlayer().hidePlayer(p);
 			}
