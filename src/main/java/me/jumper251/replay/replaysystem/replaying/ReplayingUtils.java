@@ -1,62 +1,36 @@
 package me.jumper251.replay.replaysystem.replaying;
 
 
-
-import java.util.ArrayDeque;
-
-
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import me.jumper251.replay.replaysystem.data.types.*;
-import org.bukkit.Bukkit;
-import org.bukkit.Effect;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.World;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Item;
-import org.bukkit.entity.Projectile;
-import org.bukkit.scheduler.BukkitRunnable;
-
 import com.comphenix.packetwrapper.AbstractPacket;
 import com.comphenix.packetwrapper.WrapperPlayServerEntityDestroy;
 import com.comphenix.packetwrapper.WrapperPlayServerEntityEquipment;
 import com.comphenix.packetwrapper.WrapperPlayServerEntityVelocity;
+import com.comphenix.protocol.wrappers.EnumWrappers.PlayerAction;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.comphenix.protocol.wrappers.WrappedSignedProperty;
-
-import com.comphenix.protocol.wrappers.EnumWrappers.PlayerAction;
-
 import me.jumper251.replay.ReplaySystem;
 import me.jumper251.replay.filesystem.ConfigManager;
 import me.jumper251.replay.filesystem.MessageBuilder;
 import me.jumper251.replay.replaysystem.data.ActionData;
 import me.jumper251.replay.replaysystem.data.ActionType;
 import me.jumper251.replay.replaysystem.data.ReplayData;
+import me.jumper251.replay.replaysystem.data.types.*;
 import me.jumper251.replay.replaysystem.recording.PlayerWatcher;
 import me.jumper251.replay.replaysystem.utils.MetadataBuilder;
 import me.jumper251.replay.replaysystem.utils.NPCManager;
-import me.jumper251.replay.replaysystem.utils.entities.FishingUtils;
-import me.jumper251.replay.replaysystem.utils.entities.IEntity;
-import me.jumper251.replay.replaysystem.utils.entities.INPC;
-import me.jumper251.replay.replaysystem.utils.entities.PacketEntity;
-import me.jumper251.replay.replaysystem.utils.entities.PacketEntityOld;
-import me.jumper251.replay.replaysystem.utils.entities.PacketNPC;
-import me.jumper251.replay.replaysystem.utils.entities.PacketNPCOld;
+import me.jumper251.replay.replaysystem.utils.entities.*;
 import me.jumper251.replay.utils.MaterialBridge;
 import me.jumper251.replay.utils.MathUtils;
 import me.jumper251.replay.utils.VersionUtil;
 import me.jumper251.replay.utils.VersionUtil.VersionEnum;
+import org.bukkit.*;
+import org.bukkit.entity.*;
+import org.bukkit.scheduler.BukkitRunnable;
+
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class ReplayingUtils {
 
@@ -334,7 +308,6 @@ public class ReplayingUtils {
 				}
 
 			}
-			
 
 		}
 		
@@ -599,6 +572,14 @@ public class ReplayingUtils {
 		}
 
 	}
+
+	public void resetChangesPacket(Player player, Map<Location, ItemData> changes) {
+		if (!Bukkit.isPrimaryThread()) {
+			Bukkit.getScheduler().runTask(ReplaySystem.getInstance(), () -> setBlocksPacket(player, changes));
+		} else {
+			setBlocksPacket(player, changes);
+		}
+	}
 	
 	@SuppressWarnings("deprecation")
 	private void setBlocks(Map<Location, ItemData> changes) {
@@ -608,6 +589,12 @@ public class ReplayingUtils {
 			} else {
 				location.getBlock().setTypeIdAndData(itemData.getId(), (byte) itemData.getSubId(), true);
 			}
+		});
+	}
+
+	private void setBlocksPacket(Player player, Map<Location, ItemData> changes) {
+		changes.forEach((location, itemData) -> {
+			player.sendBlockChange(location, itemData.getId(), (byte) itemData.getSubId());
 		});
 	}
 	
