@@ -2,7 +2,9 @@ package me.jumper251.replay.replaysystem.replaying;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import me.jumper251.replay.utils.ReplayManager;
 import org.bukkit.Bukkit;
 
 import org.bukkit.GameMode;
@@ -78,6 +80,7 @@ public class ReplaySession {
 				if (all == this.player) continue;
 				
 				this.player.hidePlayer(all);
+				all.hidePlayer(this.player);
 			}
 		}
 
@@ -102,10 +105,16 @@ public class ReplaySession {
 				
 				
 				if (ConfigManager.HIDE_PLAYERS) {
+					List<Player> watchingPlayers = ReplayHelper.replaySessions.values().stream()
+							.map(replayer -> replayer.getWatchingPlayer())
+							.collect(Collectors.toList());
+
 					for (Player all : Bukkit.getOnlinePlayers()) {
 						if (all == player) continue;
-						
+						if (watchingPlayers.contains(all)) continue;
+
 						player.showPlayer(all);
+						all.showPlayer(player);
 					}
 				}
 

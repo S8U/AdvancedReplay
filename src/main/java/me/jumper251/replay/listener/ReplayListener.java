@@ -301,6 +301,18 @@ public class ReplayListener extends AbstractListener {
 	public void onJoin(PlayerJoinEvent e) {
 		Player p = e.getPlayer();
 
+		if (ConfigManager.HIDE_PLAYERS) {
+			System.out.println("activeReplays: " + ReplayManager.activeReplays);
+			System.out.println("replaySessions: " + ReplayHelper.replaySessions);
+			for (Replayer replayer : ReplayHelper.replaySessions.values()) {
+				if (p.equals(replayer.getWatchingPlayer())) continue;
+
+				System.out.println(p.getName() + " / " + replayer.getWatchingPlayer().getName());
+				p.hidePlayer(replayer.getWatchingPlayer());
+				replayer.getWatchingPlayer().hidePlayer(p);
+			}
+		}
+
 		if(ConfigManager.UPDATE_NOTIFY){
 			if(ReplaySystem.updater.isVersionAvailable() && p.hasPermission("replay.admin")){
 				p.sendMessage(ReplaySystem.PREFIX + "An update is available: https://www.spigotmc.org/resources/advancedreplay-1-8-1-15.52849/");
